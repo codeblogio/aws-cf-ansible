@@ -46,14 +46,14 @@ Resources:
 
 # Subnets and Associations #
 {% for segment_name,segment in segments.iteritems() %}
-  {% set segment_loop = loop %}
+  {% set segment_cidr = vpc.cidr | ipsubnet(vpc.slash, loop.index0) %}
   {% for subnet in range(1, segment.azs + 1) %}
   # Subnets #
   {{ segment_name }}Subnet{{ subnet }}:
     Type: AWS::EC2::Subnet
     Properties:
       AvailabilityZone: {{ lookup('get_azs').split(',')[subnet - 1] }}
-      CidrBlock: {{ vpc.cidr | ipsubnet(vpc.slash, segment_loop.index0) | ipsubnet(segment.slash, subnet - 1) }}
+      CidrBlock: {{ segment_cidr| ipsubnet(segment.slash, subnet - 1) }}
       VpcId: { Ref: Vpc }
       Tags:
         - Key: Name
