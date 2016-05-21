@@ -1,0 +1,34 @@
+#jinja2:lstrip_blocks:False,trim_blocks:False
+---
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: Base Network Infrastructure
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: {{ vpc.cidr }}
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: {{ stack_prefix | lower }}_vpc
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: {{ stack_prefix | lower }}_ig
+
+  VPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: { Ref: Vpc }
+      InternetGatewayId: { Ref: InternetGateway }
+
+Outputs:
+  Vpc:
+    Value: {Ref: Vpc}
+  InternetGateway:
+    Value: {Ref: InternetGateway}

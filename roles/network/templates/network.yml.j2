@@ -4,28 +4,11 @@ AWSTemplateFormatVersion: "2010-09-09"
 
 Description: Base Network Infrastructure
 
-Resources:
+Parameters:
   Vpc:
-    Type: AWS::EC2::VPC
-    Properties:
-      CidrBlock: {{ vpc.cidr }}
-      EnableDnsHostnames: true
-      Tags:
-        - Key: Name
-          Value: {{ stack_prefix | lower }}_vpc
+    Type: String
 
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Name
-          Value: {{ stack_prefix | lower }}_ig
-
-  VPCGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      VpcId: { Ref: Vpc }
-      InternetGatewayId: { Ref: InternetGateway }
+Resources:
 
 # Route Tables #
   InternalRouteTbl:
@@ -34,7 +17,7 @@ Resources:
       VpcId: { Ref: Vpc }
       Tags:
         - Key: Name
-          Value: {{ stack_prefix | lower }}_internal_rt
+          Value: {{ stack_prefix | lower }}-internal-rt
 
   ExternalRouteTbl:
     Type: AWS::EC2::RouteTable
@@ -42,7 +25,7 @@ Resources:
       VpcId: { Ref: Vpc }
       Tags:
         - Key: Name
-          Value: {{ stack_prefix | lower }}_external_rt
+          Value: {{ stack_prefix | lower }}-external-rt
 
 # Subnets and Associations #
 {% for segment_name,segment in segments.iteritems() %}
@@ -52,12 +35,12 @@ Resources:
   {{ segment_name }}Subnet{{ subnet }}:
     Type: AWS::EC2::Subnet
     Properties:
-      AvailabilityZone: {{ lookup('get_azs').split(',')[subnet - 1] }}
+      AvailabilityZone: {{ lookup('get_azs', region).split(',')[subnet - 1] }}
       CidrBlock: {{ segment_cidr| ipsubnet(segment.slash, subnet - 1) }}
       VpcId: { Ref: Vpc }
       Tags:
         - Key: Name
-          Value: {{ stack_prefix | lower }}_{{ segment_name | lower }}
+          Value: {{ stack_prefix | lower }}-{{ segment_name | lower }}
 
   # Associate Subnet with RouteTable #
   {% if segment_name == 'Public' %}
@@ -73,4 +56,16 @@ Resources:
       SubnetId: { Ref: {{ segment_name }}Subnet{{ subnet }} }
 
   {% endfor %}
+{% endfor %}
+
+Outputs:
+{% for segment_name,segment in segments.iteritems() %}
+  {{ segment_name }}Subnets:
+    Value:
+      "Fn::Join":
+        - ","
+        -
+        {% for subnet in range(1, segment.azs + 1) %}
+          - {Ref: "{{ segment_name }}Subnet{{ subnet }}"}
+        {% endfor %}
 {% endfor %}

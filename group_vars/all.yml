@@ -1,0 +1,12 @@
+region: us-east-1
+stack_prefix: codeblog
+vpc:
+  cidr: 10.0.0.0/16
+  slash: 24
+segments:
+  Public:
+    azs: 3
+    slash: 26   # size of AZ subnets in each segment
+  Private:
+    azs: 3
+    slash: 26   # size of AZ subnets in each segment
